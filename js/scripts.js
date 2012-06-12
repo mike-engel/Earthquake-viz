@@ -50,7 +50,7 @@ var url = "http://earthquake.usgs.gov/earthquakes/feed/geojsonp/1.0/week",
 			},
 			"geometry":{
 				"type":"Point",
-				"coordinates":[-149.0674,65.1622,5.8]
+				"coordinates":[-149.0674,65.1622,5.8] [Long,Lat,Depth?]
 			},
 			"id":"ak10490679"
 		}
