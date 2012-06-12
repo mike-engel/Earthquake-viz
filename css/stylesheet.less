@@ -1,3 +1,102 @@
+/************************
+	VARIABLES
+************************/
+
+@sans: helvetica, arial, sans-serif;
+
+
+
+/************************
+	RESETS
+************************/
+
+html {
+	width: 100%;
+	height: 100%;
+}
+
 body {
-	font: normal .8125em helvetica, arial, sans-serif;
+	width: 100%;
+	height: 100%;
+	font: normal 16px @sans;
+}
+
+ul {
+	list-style: none;
+	list-style-type: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	margin: 0;
+	padding: 0;
+}
+
+.clear {
+	clear: both;
+}
+
+
+
+/************************
+	CONTENT
+************************/
+
+header {
+	background: rgb(169,3,41); /* Old browsers */
+	background: -moz-linear-gradient(top,  rgb(169,3,41) 0%, rgb(143,2,34) 44%, rgb(109,0,25) 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(169,3,41)), color-stop(44%,rgb(143,2,34)), color-stop(100%,rgb(109,0,25))); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  rgb(169,3,41) 0%,rgb(143,2,34) 44%,rgb(109,0,25) 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  rgb(169,3,41) 0%,rgb(143,2,34) 44%,rgb(109,0,25) 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  rgb(169,3,41) 0%,rgb(143,2,34) 44%,rgb(109,0,25) 100%); /* IE10+ */
+	background: linear-gradient(top,  rgb(169,3,41) 0%,rgb(143,2,34) 44%,rgb(109,0,25) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a90329', endColorstr='#6d0019',GradientType=0 ); /* IE6-9 */
+	width: 100%;
+	padding: 15px 0;
+	margin: 0 0 30px 0;
+	
+	h1 {
+		font-size: 1.5em;
+		font-weight: normal;
+		color: #eeeeee;
+		width: 100%;
+		max-width: 1024px;
+		margin: 0 auto;
+		letter-spacing: 1px;
+	}
+}
+
+.content {
+	width: 100%;
+	max-width: 1024px;
+	margin: 0 auto;
+	
+	h6 {
+		font-size: .9125em;
+		color: #555;
+		margin: 0 0 7px 0;
+	}
+	
+	#last-quake-time {
+		font-size: .8125em;
+		color: #555;
+		width: 100%;
+		border-bottom: 1px solid #555;
+		display: block;
+		padding: 0 0 10px 0;
+		margin: 0 0 40px 0;
+	}
+	
+	#data-timestamp {
+		font-size: .7125em;
+		color: #555;
+		border-top: 1px solid #555;
+		padding: 10px 0 0 0;
+		width: 100%;
+		display: block;
+		margin: 40px 0 0 0;
+	}
+	
+	#bar-demo {
+		font-size: .8125em;
+	}
 }
