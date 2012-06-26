@@ -9,18 +9,28 @@ var quakeData = [], i,
 	x,
 	y,
 	barDemo,
+	chartType = 'projection',
 	drawQuakes = {
 		LoadData: function () {
+			console.log("starting ajax...");
 			$.ajax({
 				url: url,
 				dataType: "jsonp",
 				jsonp: false,
 				jsonpCallback: "eqfeed_callback",
 				success: function (data) {
+					console.log("ajax success!");
 					jsonData = data;
-					drawQuakes.Extract(drawQuakes.DrawBars);
+					switch (chartType) {
+						case 'projection':
+							drawQuakes.Extract(drawQuakes.DrawProjection);
+						break;
+						case 'bars':
+							drawQuakes.Extract(drawQuakes.DrawBars);
+						break;
+					}
 					drawQuakes.TimeStamp();
-					setTimeout(drawQuakes.RefreshData, 300000); //this will refresh the data every 5 minutes
+					//setTimeout(drawQuakes.RefreshData, 300000); //this will refresh the data every 5 minutes
 				},
 				statusCode: {
 					404: function () { alert("Data not found. Try retyping the URL"); },
@@ -29,6 +39,7 @@ var quakeData = [], i,
 			});
 		},
 		Extract: function (callback) {
+			console.log('extracting data');
 			var barCount = Math.floor(1004 / (barWidth + barGutter));
 			for (i = 0; i < barCount; i++) {
 				quakeData[i] = jsonData.features[i];
@@ -36,6 +47,7 @@ var quakeData = [], i,
 			callback();
 		},
 		DrawBars: function () {
+			console.log('drawing bars...');
 			x = d3.scale.linear().domain([0, quakeData.length]).range([0, width - 10]);
 			y = d3.scale.linear().domain([0, 10]).rangeRound([0, height]);
 			barDemo = d3.select("#bar-demo")
@@ -106,6 +118,8 @@ var quakeData = [], i,
 				.attr('fill', 'black')
 				.attr('transform', 'translate(0, 18)')
 				.attr('class', 'yAxis');
+				
+			console.log('bars complete');
 			
 		},
 		TimeStamp: function () {
@@ -131,12 +145,14 @@ var quakeData = [], i,
 			$('#data-timestamp span').text(hour + ":" + minute + ":" + second);
 		},
 		RefreshData: function () {
+			console.log('refreshing data...');
 			$.ajax({
 				url: url,
 				dataType: "jsonp",
 				jsonp: false,
 				jsonpCallback: "eqfeed_callback",
 				success: function (data) {
+					console.log('refresh data success!');
 					jsonData = data;
 					drawQuakes.Extract(drawQuakes.RedrawBars);
 					drawQuakes.TimeStamp();
@@ -149,6 +165,7 @@ var quakeData = [], i,
 			});
 		},
 		RedrawBars: function () {
+			console.log('redrawing bars...');
 			var rect = barDemo.selectAll(".rect")
 					.data(quakeData, function (datum) { return datum.properties.time; }),
 				text = barDemo.selectAll("text.barLabel")
@@ -225,9 +242,118 @@ var quakeData = [], i,
 				.duration(1000)
 				.attr('x', function (datum, idx) { return x(idx + 1) + barWidth; })
 				.remove();
+				
+			console.log('redraw complete');
+		}, DrawProjection: function () {
+			console.log('drawing projection...');
+			var feature,
+				quakeFeatures;
+			
+			var projection = d3.geo.azimuthal()
+				.scale(380)
+				.origin([-100,42])
+				.mode("orthographic")
+				.translate([512, 400]);
+				
+			var scale = {
+				orthographic: 380,
+				stereographic:  380,
+				gnumonic: 380,
+				equidistant: 380 / Math.Pi * 2,
+				equalarea: 380 / Math.SQRT2
+			};
+				
+			var circle = d3.geo.greatCircle()
+				.origin(projection.origin());
+				
+			var path = d3.geo.path()
+				.projection(projection);
+				
+			var quakes = d3.geo.path()
+				.projection(projection);
+				
+			var svg = d3.select('#bar-demo')
+				.append('svg:svg')
+				.attr('width', 1024)
+				.attr('height', 800)
+				.on('mousedown', mousedown);
+				
+			d3.json("js/world-countries.json", function(collection) {
+				console.log("drawing countries...");
+				feature = svg.selectAll(".countries")
+					.data(collection.features)
+					.enter().insert("svg:path", '.quakes')
+					.attr("d", clip)
+					.attr('class', 'countries');
+				
+				feature.append("svg:title")
+				  .text(function(d) { return d.properties.name; });
+				  
+				console.log('countries complete!');
+			});
+			
+			console.log("drawing quakes...");
+			quakeFeature = svg.selectAll('.quakes')
+				.data(quakeData)
+				.enter()
+				.append('path')
+				.attr('class', 'quakes')
+				.attr('d', clipQ);
+			
+			d3.select(window)
+				.on("mousemove", mousemove)
+				.on("mouseup", mouseup);
+			
+			var m0,
+				o0;
+			
+			function mousedown() {
+				m0 = [d3.event.pageX, d3.event.pageY];
+				o0 = projection.origin();
+				d3.event.preventDefault();
+			}
+			
+			function mousemove() {
+				if (m0) {
+					var m1 = [d3.event.pageX, d3.event.pageY],
+						o1 = [o0[0] + (m0[0] - m1[0]) / 8, o0[1] + (m1[1] - m0[1]) / 8];
+					projection.origin(o1);
+					circle.origin(o1);
+					refresh();
+				}
+			}
+			
+			function mouseup() {
+				if (m0) {
+					mousemove();
+					m0 = null;
+				}
+			}
+			
+			function refresh(duration) {
+				(duration ? feature.transition().duration(duration) : feature).attr("d", clip);
+				(duration ? quakeFeature.transition().duration(duration) : quakeFeature).attr("d", clipQ);
+			}
+			
+			function clip(d) {
+				return path(circle.clip(d));
+			}
+			
+			function clipQ(d) {
+				return quakes(circle.clip(d));
+			}
+			
+			console.log('projection complete');
 		}
 	};
 
 $(document).ready(function () {
 	drawQuakes.LoadData();
+	
+	$( '.projection-type' ).change(function () {
+		chartType = $( 'select option:selected' ).attr('value');
+		$( '#bar-demo' ).empty();
+		console.log('redrawing...')
+		drawQuakes.LoadData();
+	});
 });
