@@ -340,6 +340,8 @@ var quakeData = [], i,
 			}
 			
 			function clipQ(d) {
+				var qData = d;
+				quakes.pointRadius( function () { return d.properties.mag * 10; });
 				return quakes(circle.clip(d));
 			}
 			
