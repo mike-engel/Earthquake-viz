@@ -9,7 +9,7 @@ var quakeData = [], i,
 	x,
 	y,
 	barDemo,
-	chartType = 'projection',
+	chartType = 'azimuthal',
 	drawQuakes = {
 		LoadData: function () {
 			console.log("starting ajax...");
@@ -22,11 +22,17 @@ var quakeData = [], i,
 					console.log("ajax success!");
 					jsonData = data;
 					switch (chartType) {
-						case 'projection':
-							drawQuakes.Extract(drawQuakes.DrawProjection);
+						case 'azimuthal':
+							drawQuakes.Extract(drawQuakes.DrawAzimuthal);
+							$('#mag-scale').show(500);
+						break;
+						case 'mercator':
+							drawQuakes.Extract(drawQuakes.DrawMercator);
+							$('#mag-scale').show(500);
 						break;
 						case 'bars':
 							drawQuakes.Extract(drawQuakes.DrawBars);
+							$('#mag-scale').hide(500);
 						break;
 					}
 					drawQuakes.TimeStamp();
@@ -154,9 +160,19 @@ var quakeData = [], i,
 				success: function (data) {
 					console.log('refresh data success!');
 					jsonData = data;
-					drawQuakes.Extract(drawQuakes.RedrawBars);
+					switch (chartType) {
+						case 'azimuthal':
+							drawQuakes.Extract(drawQuakes.RedrawAzimuthal);
+						break;
+						case 'mercator':
+							drawQuakes.Extract(drawQuakes.RedrawMercator);
+						break;
+						case 'bars':
+							drawQuakes.Extract(drawQuakes.RedrawBars);
+						break;
+					}
 					drawQuakes.TimeStamp();
-					setTimeout(drawQuakes.RefreshData, 120000); //this will refresh the data every 5 minutes
+					setTimeout(drawQuakes.RefreshData, 300000); //this will refresh the data every 5 minutes
 				},
 				statusCode: {
 					404: function () { alert("Data not found. Try retyping the URL"); },
@@ -244,7 +260,7 @@ var quakeData = [], i,
 				.remove();
 				
 			console.log('redraw complete');
-		}, DrawProjection: function () {
+		}, DrawAzimuthal: function () {
 			console.log('drawing projection...');
 			var feature,
 				quakeFeatures;
@@ -280,7 +296,7 @@ var quakeData = [], i,
 				
 			d3.json("js/world-countries.json", function(collection) {
 				console.log("drawing countries...");
-				feature = svg.selectAll(".countries")
+				feature = svg.insert("svg:g", '#quakes').attr('id', 'countries').selectAll(".countries")
 					.data(collection.features)
 					.enter().insert("svg:path", '.quakes')
 					.attr("d", clip)
@@ -293,11 +309,16 @@ var quakeData = [], i,
 			});
 			
 			console.log("drawing quakes...");
-			quakeFeature = svg.selectAll('.quakes')
+			quakeFeatures = svg.append("svg:g").attr('id', 'quakes').selectAll('.quakes')
 				.data(quakeData)
 				.enter()
-				.append('path')
+				.insert('path', 'path')
 				.attr('class', 'quakes')
+				.attr('mag', function (d) { return d.properties.mag; })
+				.attr('location', function (d) { return d.properties.place; })
+				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
+				.attr('felt', function (d) { return d.properties.felt; })
+				.attr('tsunami', function (d) { return d.properties.tsunami; })
 				.attr('d', clipQ);
 			
 			d3.select(window)
@@ -332,7 +353,7 @@ var quakeData = [], i,
 			
 			function refresh(duration) {
 				(duration ? feature.transition().duration(duration) : feature).attr("d", clip);
-				(duration ? quakeFeature.transition().duration(duration) : quakeFeature).attr("d", clipQ);
+				(duration ? quakeFeatures.transition().duration(duration) : quakeFeatures).attr("d", clipQ);
 			}
 			
 			function clip(d) {
@@ -345,7 +366,26 @@ var quakeData = [], i,
 				return quakes(circle.clip(d));
 			}
 			
+			svg.selectAll('.quakes')
+				.data(quakeData)
+				.on('mouseover', function (d, i) {
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#de5d1d')
+						.style('stroke', '#bd5917');
+				})
+				.on('mouseout', function (d, i) {
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#DED71D')
+						.style('stroke', '#BDB717');
+				});
+			
 			console.log('projection complete');
+		}, DrawMercator: function() {
+		
 		}
 	};
 
@@ -358,4 +398,13 @@ $(document).ready(function () {
 		console.log('redrawing...')
 		drawQuakes.LoadData();
 	});
+	
+	/*
+$('.quakes').hover(function () {
+		console.log("quake hover");
+		$(this).animate({'fill': 'red'}, 200);
+	}, function () {
+		$(this).animate({'fill': '#DED71D'}, 200);
+	})
+*/
 });

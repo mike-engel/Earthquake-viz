@@ -26,13 +26,31 @@
 		</header>
 		<div class="content">
 			<select class="projection-type">
-				<option value="projection" selected="selected">Projection</option>
+				<option value="azimuthal" selected="selected">Azimuthal Projection</option>
+				<option value="mercator">Mercator Projection</option>
 				<option value="bars">Bars</option>
 			</select>
 			<h6>The last earthquake was on</h6>
 			<time id="last-quake-time"></time>
 			<div id="bar-demo"></div>
 			<time id="data-timestamp">As of <span></span></time>
+			<div id="mag-scale">
+				<h6 class="mag-title">Magnitude Scale</h6>
+				<ul class="key">
+					<li style="margin-left: 98px;">Mag 10</li>
+					<li style="margin-left: 182px;">Mag 8</li>
+					<li style="margin-left: 145px;">Mag 6</li>
+					<li style="margin-left: 103px;">Mag 4</li>
+					<li style="margin-left: 64px;">Mag 2</li>
+					<div class="clear"></div>
+				</ul>
+				<div class="mag ten">&nbsp;</div>
+				<div class="mag eight">&nbsp;</div>
+				<div class="mag six">&nbsp;</div>
+				<div class="mag four">&nbsp;</div>
+				<div class="mag two">&nbsp;</div>
+				<div class="clear"></div>
+			</div>
 		</div>
 		<footer>
 		

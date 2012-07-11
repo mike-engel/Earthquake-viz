@@ -35,6 +35,12 @@ h1, h2, h3, h4, h5, h6 {
 	clear: both;
 }
 
+.borderRadius(@size) {
+	-webkit-border-radius: @size;
+	-moz-border-radius: @size;
+	border-radius: @size;
+}
+
 
 
 /************************
@@ -121,6 +127,62 @@ header {
 		.quakes {
 			fill: #DED71D;
 			stroke: #BDB717;
+		}
+	}
+	
+	#mag-scale {
+		padding-bottom: 50px;
+		display: none;
+			
+		h6.mag-title {
+			margin-top:30px;
+			margin-bottom: 30px;
+		}
+		
+		.mag {
+			background-color: #DED71D;
+			border: 1px solid #BDB717;
+			float: left;
+			margin: 10px 20px;
+		}
+		
+		.ten {
+			width: 200px;
+			height: 200px;
+			.borderRadius(100px);
+		}
+		.eight {
+			width: 160px;
+			height: 160px;
+			.borderRadius(80px);
+		}
+		.six {
+			width: 120px;
+			height: 120px;
+			.borderRadius(60px);
+		}
+		.four {
+			width: 80px;
+			height: 80px;
+			.borderRadius(40px);
+		}
+		.two {
+			width: 40px;
+			height: 40px;
+			.borderRadius(20px);
+		}
+		
+		.key {
+			list-style: none;
+			
+			li {
+				float: left;
+				text-align: center;
+				font-weight: bold;
+				text-transform: uppercase;
+				font-size: 12px;
+				color: #787878;
+			}
 		}
 	}
 }
