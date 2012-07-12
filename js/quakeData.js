@@ -60,6 +60,7 @@ var quakeData = [], i,
 				.append("svg:svg")
 				.attr("width", width)
 				.attr("height", height + padding)
+				.attr('id', 'data-visualization')
 				.append('g')
 				.attr('transform', 'translate(20, 10)');
 				
@@ -292,6 +293,7 @@ var quakeData = [], i,
 				.append('svg:svg')
 				.attr('width', 1024)
 				.attr('height', 800)
+				.attr('id', 'data-visualization')
 				.on('mousedown', mousedown);
 				
 			d3.json("js/world-countries.json", function(collection) {
@@ -317,7 +319,7 @@ var quakeData = [], i,
 				.attr('mag', function (d) { return d.properties.mag; })
 				.attr('location', function (d) { return d.properties.place; })
 				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
-				.attr('felt', function (d) { return d.properties.felt; })
+				.attr('depth', function (d) { return d.geometry.coordinates[2]; })
 				.attr('tsunami', function (d) { return d.properties.tsunami; })
 				.attr('d', clipQ);
 			
@@ -369,6 +371,26 @@ var quakeData = [], i,
 			svg.selectAll('.quakes')
 				.data(quakeData)
 				.on('mouseover', function (d, i) {
+					var coordsString = $(this).attr('d'),
+						coordsArray = coordsString.split(/,/),
+						xCoord = coordsArray[0].substr(1,3),
+						yCoord = coordsArray[1].substr(0,3),
+						radius = $(this).attr('mag') * 10,
+						hoverH = 140,
+						hoverW = 150,
+						location = $(this).attr('location'),
+						time = $(this).attr('time'),
+						mag = $(this).attr('mag'),
+						depth = $(this).attr('depth'),
+						tsunami = $(this).attr('tsunami');
+					$('#bar-demo #location').text(location);
+					$('#bar-demo #time').text(time);
+					$('#bar-demo #mag').text(mag);
+					$('#bar-demo #depth').text(depth + " km");
+					$('#bar-demo #tsunami').text(function () { if (tsunami) { return tsunami; } else { return "None"; } });
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').css({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px'});
+					$('#bar-demo .hover').clearQueue().delay(500).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius - 10 + 'px', 'opacity': 1}, 250);
 					d3.select(this)
 						.transition()
 						.duration(150)
@@ -376,6 +398,15 @@ var quakeData = [], i,
 						.style('stroke', '#bd5917');
 				})
 				.on('mouseout', function (d, i) {
+					var coordsString = $(this).attr('d'),
+						coordsArray = coordsString.split(/,/),
+						xCoord = coordsArray[0].substr(1,3),
+						yCoord = coordsArray[1].substr(0,3),
+						radius = $(this).attr('mag') * 10,
+						hoverH = 140,
+						hoverW = 150;
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').clearQueue().delay(100).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px', 'opacity': 0}, 250);
 					d3.select(this)
 						.transition()
 						.duration(150)
@@ -394,7 +425,7 @@ $(document).ready(function () {
 	
 	$( '.projection-type' ).change(function () {
 		chartType = $( 'select option:selected' ).attr('value');
-		$( '#bar-demo' ).empty();
+		$('#data-visualization').remove();
 		console.log('redrawing...')
 		drawQuakes.LoadData();
 	});

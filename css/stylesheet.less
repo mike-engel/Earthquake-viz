@@ -1,9 +1,41 @@
+/*
+*
+*	TODO:
+*	1. Create mercator map
+*	2. Use meta data to display tooltip for each quake
+*	3. Add re-draw for azimuthal and mercator, it shouldn't be as complicated as the bars due to no animation and removal
+*	4. Make it sweet
+*
+*/
+
 /************************
 	VARIABLES
 ************************/
 
 @sans: helvetica, arial, sans-serif;
 
+.gradient {
+	background: #ffffff; /* Old browsers */
+	background: -moz-linear-gradient(top,  #ffffff 0%, #f4f4f4 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#f4f4f4)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top,  #ffffff 0%,#f4f4f4 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top,  #ffffff 0%,#f4f4f4 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top,  #ffffff 0%,#f4f4f4 100%); /* IE10+ */
+	background: linear-gradient(to bottom,  #ffffff 0%,#f4f4f4 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f4f4f4',GradientType=0 ); /* IE6-9 */
+}
+
+.borderRadius(@size) {
+	-webkit-border-radius: @size;
+	-moz-border-radius: @size;
+	border-radius: @size;
+}
+
+.dropshadow(@x, @y, @blur, @spread, @clr) {
+	-moz-box-shadow:    @x @y @blur @spread @clr;
+	-webkit-box-shadow: @x @y @blur @spread @clr;
+	box-shadow:         @x @y @blur @spread @clr;
+}
 
 
 /************************
@@ -33,12 +65,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .clear {
 	clear: both;
-}
-
-.borderRadius(@size) {
-	-webkit-border-radius: @size;
-	-moz-border-radius: @size;
-	border-radius: @size;
 }
 
 
@@ -108,6 +134,65 @@ header {
 	
 	#bar-demo {
 		font-size: .8125em;
+		position: relative;
+		
+		.hover {
+			position: absolute;
+			background-color: white;
+			.gradient;
+			.dropshadow(0, 2px, 5px, 0, rgba(0,0,0,.1));
+			.borderRadius(3px);
+			border: 1px solid #ddd;
+			width: 120px;
+			height: auto;
+			padding: 15px;
+			opacity: 0;
+			font-size: .875em;
+			
+			#location {
+				font-weight: normal;
+				font-size: 1.125em;
+				margin: 0 0 10px 0;
+			}
+			
+			#time {
+				margin: 0 0 10px 0;
+				display: block;
+			}
+			
+			.label {
+				color: #757575;
+				margin: 0 0 1px 0;
+			}
+			
+			#mag {
+				margin: 0 0 10px 0;
+				font-size: 1.125em;
+				display: block;
+			}
+			
+			#depth-container {
+				float: left;
+				width: 50%;
+				
+				#depth {
+					margin: 0;
+					font-size: 1.125em;
+					display: block;
+				}
+			}
+			
+			#tsunami-container {
+				float: left;
+				width: 50%;
+				
+				#tsunami {
+					margin: 0;
+					font-size: 1.125em;
+					display: block;
+				}
+			}
+		}
 		
 		.hLine {
 			position: relative;
