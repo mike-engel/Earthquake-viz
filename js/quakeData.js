@@ -1,5 +1,5 @@
 var quakeData = [], i,
-	url = "http://earthquake.usgs.gov/earthquakes/feed/geojsonp/1.0/week",
+	url = "http://earthquake.usgs.gov/earthquakes/feed/geojsonp/1.0/day",
 	jsonData,
 	barWidth = 40, //width of each bar
 	barGutter = 8, //width of gutter between bars
@@ -8,7 +8,7 @@ var quakeData = [], i,
 	padding = 30,
 	x,
 	y,
-	barDemo,
+	barDemo, svg,
 	chartType = 'azimuthal',
 	drawQuakes = {
 		LoadData: function () {
@@ -36,7 +36,7 @@ var quakeData = [], i,
 						break;
 					}
 					drawQuakes.TimeStamp();
-					//setTimeout(drawQuakes.RefreshData, 300000); //this will refresh the data every 5 minutes
+					setTimeout(drawQuakes.RefreshData, 300000); //this will refresh the data every 5 minutes
 				},
 				statusCode: {
 					404: function () { alert("Data not found. Try retyping the URL"); },
@@ -97,8 +97,12 @@ var quakeData = [], i,
 				.attr('height', function (datum) {return y(datum.properties.mag); })
 				.attr('width', barWidth)
 				.attr('class', 'rect')
-				.attr('fill', '#2d578b')
-				.attr('onmouseover', 'DoSomething()');
+				.attr('mag', function (d) { return d.properties.mag; })
+				.attr('location', function (d) { return d.properties.place; })
+				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
+				.attr('depth', function (d) { return d.geometry.coordinates[2]; })
+				.attr('tsunami', function (d) { return d.properties.tsunami; })
+				.attr('fill', '#2d578b');
 				
 			barDemo.selectAll('.barLabel')
 				.data(quakeData)
@@ -125,6 +129,44 @@ var quakeData = [], i,
 				.attr('fill', 'black')
 				.attr('transform', 'translate(0, 18)')
 				.attr('class', 'yAxis');
+				
+			barDemo.selectAll('.rect')
+				.on('mouseover', function (d, i) {
+					var xCoord = $(this).attr('x'),
+						yCoord = $(this).attr('y'),
+						hoverH = 140,
+						hoverW = 150,
+						location = $(this).attr('location'),
+						time = $(this).attr('time'),
+						mag = $(this).attr('mag'),
+						depth = $(this).attr('depth'),
+						tsunami = $(this).attr('tsunami');
+					console.log(xCoord);
+					$('#bar-demo #location').text(location);
+					$('#bar-demo #time').text(time);
+					$('#bar-demo #mag').text(mag);
+					$('#bar-demo #depth').text(depth + " km");
+					$('#bar-demo #tsunami').text(function () { if (tsunami) { return tsunami; } else { return "None"; } });
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').css({'left': xCoord - 40 + 'px', 'top': yCoord - hoverH + 'px'});
+					$('#bar-demo .hover').clearQueue().delay(500).show().animate({'left': xCoord - 40 + 'px', 'top': yCoord - hoverH - 10 + 'px', 'opacity': 1}, 250);
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#3068C5');
+				})
+				.on('mouseout', function (d, i) {
+					var xCoord = $(this).attr('x') + barWidth,
+						yCoord = $(this).attr('y'),
+						hoverH = 140,
+						hoverW = 150;
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').clearQueue().delay(100).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH + 'px', 'opacity': 0}, 250).hide();
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#2D578B');
+				});
 				
 			console.log('bars complete');
 			
@@ -160,6 +202,7 @@ var quakeData = [], i,
 				jsonpCallback: "eqfeed_callback",
 				success: function (data) {
 					console.log('refresh data success!');
+					console.log('***' + chartType + '***');
 					jsonData = data;
 					switch (chartType) {
 						case 'azimuthal':
@@ -192,7 +235,7 @@ var quakeData = [], i,
 				
 			rect.enter()
 				.insert("rect", "rect")
-				.attr('x', function (datum, idx) { return x(idx - 1); }) //swapped + and -. Revert back if it's broken!
+				.attr('x', function (datum, idx) { return x(idx - 1); })
 				.attr('y', function (datum) { return height - y(datum.properties.mag); })
 				.attr('width', barWidth)
 				.attr('height', function (datum) { return y(datum.properties.mag); })
@@ -261,8 +304,9 @@ var quakeData = [], i,
 				.remove();
 				
 			console.log('redraw complete');
-		}, DrawAzimuthal: function () {
-			console.log('drawing projection...');
+		},
+		DrawAzimuthal: function () {
+			console.log('drawing azimuthal projection...');
 			var feature,
 				quakeFeatures;
 			
@@ -289,7 +333,7 @@ var quakeData = [], i,
 			var quakes = d3.geo.path()
 				.projection(projection);
 				
-			var svg = d3.select('#bar-demo')
+			svg = d3.select('#bar-demo')
 				.append('svg:svg')
 				.attr('width', 1024)
 				.attr('height', 800)
@@ -311,8 +355,9 @@ var quakeData = [], i,
 			});
 			
 			console.log("drawing quakes...");
+			console.log(typeof jsonData);
 			quakeFeatures = svg.append("svg:g").attr('id', 'quakes').selectAll('.quakes')
-				.data(quakeData)
+				.data(jsonData.features)
 				.enter()
 				.insert('path', 'path')
 				.attr('class', 'quakes')
@@ -369,7 +414,6 @@ var quakeData = [], i,
 			}
 			
 			svg.selectAll('.quakes')
-				.data(quakeData)
 				.on('mouseover', function (d, i) {
 					var coordsString = $(this).attr('d'),
 						coordsArray = coordsString.split(/,/),
@@ -390,7 +434,7 @@ var quakeData = [], i,
 					$('#bar-demo #tsunami').text(function () { if (tsunami) { return tsunami; } else { return "None"; } });
 					hoverH = $('#bar-demo .hover').height() + 40;
 					$('#bar-demo .hover').css({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px'});
-					$('#bar-demo .hover').clearQueue().delay(500).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius - 10 + 'px', 'opacity': 1}, 250);
+					$('#bar-demo .hover').clearQueue().delay(500).show().animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius - 10 + 'px', 'opacity': 1}, 250);
 					d3.select(this)
 						.transition()
 						.duration(150)
@@ -406,7 +450,7 @@ var quakeData = [], i,
 						hoverH = 140,
 						hoverW = 150;
 					hoverH = $('#bar-demo .hover').height() + 40;
-					$('#bar-demo .hover').clearQueue().delay(100).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px', 'opacity': 0}, 250);
+					$('#bar-demo .hover').clearQueue().delay(100).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px', 'opacity': 0}, 250).hide();
 					d3.select(this)
 						.transition()
 						.duration(150)
@@ -415,9 +459,152 @@ var quakeData = [], i,
 				});
 			
 			console.log('projection complete');
-		}, DrawMercator: function() {
-		
-		}
+		},
+		RedrawAzimuthal: function () {
+			console.log('redrawing bars...');
+			var rect = svg.selectAll(".quakes")
+					.data(jsonData.features, function (datum) { return datum.properties.time; });
+				
+			rect.enter()
+				.insert("path", "path")
+				.attr('class', 'quakes')
+				.attr('mag', function (d) { return d.properties.mag; })
+				.attr('location', function (d) { return d.properties.place; })
+				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
+				.attr('depth', function (d) { return d.geometry.coordinates[2]; })
+				.attr('tsunami', function (d) { return d.properties.tsunami; })
+				.attr('d', clipQ);
+			
+			function clipQ(d) {
+				var qData = d;
+				quakes.pointRadius( function () { return d.properties.mag * 10; });
+				return quakes(circle.clip(d));
+			}
+				
+			console.log('redraw complete');
+		},
+		DrawMercator: function() {
+			console.log('drawing mercator projection...');
+			var feature,
+				quakeFeatures;
+			
+			var projection = d3.geo.mercator()
+				.scale(850)
+				.translate([480, 425]);
+				
+			var path = d3.geo.path()
+				.projection(projection);
+				
+			var quakes = d3.geo.path()
+				.projection(projection);
+				
+			var svg = d3.select('#bar-demo')
+				.append('svg:svg')
+				.attr('width', 1024)
+				.attr('height', 800)
+				.attr('id', 'data-visualization');
+				
+			d3.json("js/world-countries.json", function(collection) {
+				console.log("drawing countries...");
+				feature = svg.insert("svg:g", '#quakes').attr('id', 'countries').selectAll(".countries")
+					.data(collection.features)
+					.enter().insert("svg:path", '.quakes')
+					.attr("d", path)
+					.attr('class', 'countries');
+				
+				feature.append("svg:title")
+				  .text(function(d) { return d.properties.name; });
+				  
+				console.log('countries complete!');
+			});
+			
+			console.log("drawing quakes...");
+			quakeFeatures = svg.append("svg:g").attr('id', 'quakes').selectAll('.quakes')
+				.data(jsonData.features)
+				.enter()
+				.insert('path', 'path')
+				.attr('class', 'quakes')
+				.attr('mag', function (d) { return d.properties.mag; })
+				.attr('location', function (d) { return d.properties.place; })
+				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
+				.attr('depth', function (d) { return d.geometry.coordinates[2]; })
+				.attr('tsunami', function (d) { return d.properties.tsunami; })
+				.attr('d', quakeD);
+				
+			function quakeD (d) {
+				quakes.pointRadius( function () { return d.properties.mag * 10; });
+				return quakes(d);
+			}
+			
+			svg.selectAll('.quakes')
+				.on('mouseover', function (d, i) {
+					var coordsString = $(this).attr('d'),
+						coordsArray = coordsString.split(/,/),
+						xCoord = coordsArray[0].substr(1,3),
+						yCoord = coordsArray[1].substr(0,3),
+						radius = $(this).attr('mag') * 10,
+						hoverH = 140,
+						hoverW = 150,
+						location = $(this).attr('location'),
+						time = $(this).attr('time'),
+						mag = $(this).attr('mag'),
+						depth = $(this).attr('depth'),
+						tsunami = $(this).attr('tsunami');
+					$('#bar-demo #location').text(location);
+					$('#bar-demo #time').text(time);
+					$('#bar-demo #mag').text(mag);
+					$('#bar-demo #depth').text(depth + " km");
+					$('#bar-demo #tsunami').text(function () { if (tsunami) { return tsunami; } else { return "None"; } });
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').css({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px'});
+					$('#bar-demo .hover').clearQueue().delay(500).show().animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius - 10 + 'px', 'opacity': 1}, 250);
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#de5d1d')
+						.style('stroke', '#bd5917');
+				})
+				.on('mouseout', function (d, i) {
+					var coordsString = $(this).attr('d'),
+						coordsArray = coordsString.split(/,/),
+						xCoord = coordsArray[0].substr(1,3),
+						yCoord = coordsArray[1].substr(0,3),
+						radius = $(this).attr('mag') * 10,
+						hoverH = 140,
+						hoverW = 150;
+					hoverH = $('#bar-demo .hover').height() + 40;
+					$('#bar-demo .hover').clearQueue().delay(100).animate({'left': xCoord - (hoverW/2) + 'px', 'top': yCoord - hoverH - radius + 'px', 'opacity': 0}, 250).hide();
+					d3.select(this)
+						.transition()
+						.duration(150)
+						.style('fill', '#DED71D')
+						.style('stroke', '#BDB717');
+				});
+			
+			console.log('projection complete');
+		},
+		RedrawMercator: function () {
+			console.log('redrawing bars...');
+			var rect = svg.selectAll(".quakes")
+					.data(jsonData.features, function (datum) { return datum.properties.time; });
+				
+			rect.enter()
+				.insert("path", "path")
+				.attr('class', 'quakes')
+				.attr('mag', function (d) { return d.properties.mag; })
+				.attr('location', function (d) { return d.properties.place; })
+				.attr('time', function (d) { var epochTime = d.properties.time; var date = new Date(epochTime * 1000); var localTime = date.toLocaleString(); return localTime; }) //NOTE: IN EPOCH
+				.attr('depth', function (d) { return d.geometry.coordinates[2]; })
+				.attr('tsunami', function (d) { return d.properties.tsunami; })
+				.attr('d', quakeD);
+				
+			function quakeD (d) {
+				quakes.pointRadius( function () { return d.properties.mag * 10; });
+				return quakes(d);
+			}
+				
+			console.log('redraw complete');
+		},
 	};
 
 $(document).ready(function () {
@@ -426,16 +613,7 @@ $(document).ready(function () {
 	$( '.projection-type' ).change(function () {
 		chartType = $( 'select option:selected' ).attr('value');
 		$('#data-visualization').remove();
-		console.log('redrawing...')
+		console.log('changing visualization...')
 		drawQuakes.LoadData();
 	});
-	
-	/*
-$('.quakes').hover(function () {
-		console.log("quake hover");
-		$(this).animate({'fill': 'red'}, 200);
-	}, function () {
-		$(this).animate({'fill': '#DED71D'}, 200);
-	})
-*/
 });
