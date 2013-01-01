@@ -617,3 +617,30 @@ $(document).ready(function () {
 		drawQuakes.LoadData();
 	});
 });
+
+/*
+
+function getCircleCoords(lon, lat, radius) {
+	// radius is expected in miles
+
+	var points = 32;  // Number of points (facets) to use to approximate a circle
+	var radiusOfEarth = 3963;  // 3963 is the radius of the earth in miles
+	var d2r = Math.PI / 180;  // degrees to radians
+	var r2d = 180 / Math.PI;  // radians to degrees
+
+	// Find the radius in lat/long
+	var rLat = (radius / radiusOfEarth) * r2d;
+	var rLon = rLat / Math.cos(lat * d2r);
+	
+	var circleCoords = [ ];  // Array to hold long/lat point arrays
+
+	for (var I = 0; i < (points + 1); i++) {  // One extra to close the circle
+		var theta = Math.PI * (i / (points / 2));
+		ex = lon + (rLon * Math.cos(theta));  // center a + radius x * cos(theta)
+		ey = lat + (rLat * Math.sin(theta));  // center b + radius y * sin(theta)
+		circleCoords.push([ex, ey]);
+	}
+	return circleCoords;
+}
+
+*/
